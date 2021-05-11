@@ -36,5 +36,55 @@
 ### 2.2 匿名内部类
 
 ```java
+@Test
+public void test01(){
+    //匿名内部类
+    Comparator<Integer> comparator = new Comparator<Integer>() {
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return Integer.compare(o1,o2);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return false;
+        }
+    };
+    //调用
+    TreeSet<Integer> set = new TreeSet<>(comparator);
+}
 ```
 
+### 2.3 Lambda
+
+```java
+@Test
+public void test02(){
+    // Lambda 表达式
+    Comparator<Integer> comparator = (a, b) -> Integer.compare(a, b);
+
+    TreeSet<Integer> set = new TreeSet<>(comparator);
+}
+```
+
+演变过程：
+
+> - 垃圾代码 --> 策略模式 --> 匿名内部类 --> Lambda表达式
+
+基础语法：
+
+> - 操作符：->
+> - 左侧：参数列表
+> - 右侧：执行代码块 / Lambda 体
+
+口诀：
+
+- 写死小括号，拷贝右箭头，落地大括号
+- 左右遇一括号省
+- 左侧推断类型省
+
+语法格式：
+
+- 无参数，无返回值：() -> sout
+
+例如 Runnable接口：
