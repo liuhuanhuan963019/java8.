@@ -1,5 +1,7 @@
 package com.lhh.lamdba;
 
+import java.util.Objects;
+
 public class Employee {
     private int id;
 
@@ -10,6 +12,10 @@ public class Employee {
     private double salary;
 
     public Employee() {
+    }
+
+    public Employee(int id) {
+        this.id = id;
     }
 
     public Employee(int id, String name, int age, double salary) {
@@ -49,6 +55,19 @@ public class Employee {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Employee)) return false;
+        Employee employee = (Employee) o;
+        return getId() == employee.getId() && getAge() == employee.getAge() && Double.compare(employee.getSalary(), getSalary()) == 0 && getName().equals(employee.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getName(), getAge(), getSalary());
     }
 
     @Override
