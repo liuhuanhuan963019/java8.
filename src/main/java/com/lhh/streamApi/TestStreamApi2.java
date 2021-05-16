@@ -114,14 +114,31 @@ public class TestStreamApi2 {
         System.out.println("-----------------------------------------");
 
         Stream<Stream<Character>> stream = list.stream()
-                .map(TestStreamApi2::filterCharacter);
+                .map(TestStreamApi2::filterCharacter);  //{{a,a,a} {b,b,b,}}
 
 //        Stream<Stream<Character>> stream = list.stream()
 //                .map((e) -> filterCharacter(e));
 
         stream.forEach((e)->e.forEach(System.out::println));
 
+        Stream<Character> stream1 = list.stream()
+                .flatMap(TestStreamApi2::filterCharacter);
+        stream1.forEach(System.out::println);  //将整个流全部取出放在一个流中
     }
+
+
+    @Test
+    public void test7() {
+        List<String> list = Arrays.asList("aaa","bbb","ccc","ddd","eee");
+
+        List list2 = new ArrayList();
+
+        list2.add(11);
+        list2.add(22);
+        list2.addAll(list);
+        System.out.println(list2);
+    }
+
 
     public static Stream<Character> filterCharacter(String str) {
             List<Character> list = new ArrayList<>();
