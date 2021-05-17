@@ -148,4 +148,46 @@ public class TestStreamApi2 {
             return list.stream();
     }
 
+
+    /**
+     * 排序
+     * sorted(Comparable)  --自然排序
+     * sorted(Comparator com)----定制排序
+     * */
+    @Test
+    public void test8(){
+        List<String> list = Arrays.asList("bbb","aaa","ccc");
+
+        list.stream()
+                .sorted()
+                .forEach(System.out::println);
+
+        List<Integer> list2 = Arrays.asList(1,2,3,4,5,6,7,8,9,10);
+
+        list2.stream()
+                .filter(TestStreamApi2::compare)
+                .forEach(System.out::println);
+    }
+
+
+    public static boolean compare(Integer i){
+        if (i == 1) {
+            return true;
+        }
+        if (i==2)
+            return true;
+
+        return false;
+    }
+
+    @Test
+    public void test9() {
+        employees.stream()
+                .sorted((e1,e2)->{
+                    if(e1.getAge() == e2.getAge()) {
+                        return e1.getName().compareTo(e2.getName());
+                    }
+                    return Integer.compare(e1.getAge(),e2.getAge());
+                }).forEach(System.out::println);
+    }
 }
