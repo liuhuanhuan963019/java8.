@@ -691,3 +691,1384 @@ flatMap：
 
 ### 5.4 排序
 
+- sorted()：自然排序
+- sorted(Comparator c)：定制排序
+
+Comparable：自然排序
+
+```java
+@Test
+    public void test8(){
+        List<String> list = Arrays.asList("bbb","aaa","ccc");
+
+        list.stream()
+                .sorted()
+                .forEach(System.out::println);
+
+        List<Integer> list2 = Arrays.asList(1,2,3,4,5,6,7,8,9,10);
+
+        list2.stream()
+                .filter(TestStreamApi2::compare)
+                .forEach(System.out::println);
+    }
+
+
+    public static boolean compare(Integer i){
+        if (i == 1) {
+            return true;
+        }
+        if (i==2)
+            return true;
+
+        return false;
+    }
+```
+
+Comparator：定制排序
+
+```java
+    @Test
+    public void test9() {
+        employees.stream()
+                .sorted((e1,e2)->{
+                    if(e1.getAge() == e2.getAge()) {
+                        return e1.getName().compareTo(e2.getName());
+                    }
+                    return Integer.compare(e1.getAge(),e2.getAge());
+                }).forEach(System.out::println);
+    }
+```
+
+### 5.5 查找、匹配
+
+终止操作：
+
+- allMatch：检查是否匹配所有元素
+- anyMatch：检查是否至少匹配一个元素
+- noneMatch：检查是否没有匹配所有元素
+- findFirst：返回第一个元素
+- findAny：返回当前流中的任意元素
+- count：返回流中元素的总个数
+- max：返回流中最大值
+- min：返回流中最小值
+
+```java
+   List<Employee> employees = Arrays.asList(
+            new Employee(101,"张三",20,8000, Employee.Status.VOCATION),
+            new Employee(102,"李四",21,6500, Employee.Status.BUSY),
+            new Employee(103,"王五",19,9000, Employee.Status.FREE),
+            new Employee(104,"赵六",21,7000, Employee.Status.BUSY),
+            new Employee(105,"田七",30,10000, Employee.Status.FREE)
+    );
+
+    @Test
+    public void test1() {
+        boolean b = employees.stream()
+                .allMatch((e) -> e.getStatus().equals(Employee.Status.BUSY));
+        System.out.println(b);
+
+
+        boolean b1 = employees.stream()
+                .anyMatch((e) -> e.getStatus().equals(Employee.Status.FREE));
+        System.out.println(b1);
+
+
+        boolean b2 = employees.stream()
+                .noneMatch((e) -> e.getStatus().equals(Employee.Status.FREE));
+        System.out.println(b2);
+
+        Optional<Employee> first = employees.stream()
+                .sorted((e1, e2) -> Double.compare(e1.getSalary(), e2.getSalary()))
+                .findFirst();
+        System.out.println(first.get());
+
+
+        Optional<Employee> any = employees.stream()
+                .filter((e) -> e.getStatus().equals(Employee.Status.FREE))
+                .findAny();
+        System.out.println(any.get());
+    }
+
+    @Test
+    public void test2() {
+        long count = employees.stream()
+                .count();
+        System.out.println(count);
+
+        Optional<Employee> max = employees.stream()
+                .max((e1, e2) -> Double.compare(e1.getSalary(), e2.getSalary()));
+        System.out.println(max.get());
+
+        Optional<Employee> min = employees.stream()
+                .min((e1, e2) -> Integer.compare(e1.getAge(), e2.getAge()));
+        System.out.println(min.get());
+
+        Optional<Double> min1 = employees.stream()
+                .map(Employee::getSalary)
+                .min(Double::compare);
+        System.out.println(min1.get());
+    }
+```
+
+### 5.6 归约 、收集
+
+- 归约：reduce(T identity, BinaryOperator) / reduce(BinaryOperator) 可以将流中的数据反复结合起来，得到一个值
+- 收集：collect 将流转换成其他形式；接收一个 Collector 接口的实现，用于给流中元素做汇总的方法
+
+reduce:
+
+```java
+    @Test
+    public void test3() {
+         List<Integer> list = Arrays.asList(1,2,3,4,5,6,7,8,9,10);
+
+        Integer reduce = list.stream()
+                .reduce(0, (x, y) -> x + y);
+        System.out.println(reduce);
+
+        System.out.println("--------------------------------------");
+
+        // 计算工资的总和 有可能为空的才会被封装到Optional中去
+        Optional<Double> reduce1 = employees.stream()
+                .map(Employee::getSalary)
+                .reduce(Double::sum);
+        System.out.println(reduce1.get());
+    }
+```
+
+collect:
+
+```java
+    @Test
+    public void test4() {
+        List<String> collect = employees.stream()
+                .map(Employee::getName)
+                .collect(Collectors.toList());
+
+        collect.stream().forEach(System.out::println);
+
+        System.out.println("----------------------------------------");
+
+        Set<String> collect2 = employees.stream()
+                .map(Employee::getName)
+                .collect(Collectors.toSet());
+
+        collect2.stream().forEach(System.out::println);
+
+        System.out.println("-----------------------------------------");
+
+        HashSet<String> collect1 = employees.stream()
+                .map(Employee::getName)
+                .collect(Collectors.toCollection(HashSet::new));
+
+        collect1.stream().forEach(System.out::println);
+
+    }
+    @Test
+    public void test5() {
+        // 总数
+        Long collect = employees.stream()
+                .collect(Collectors.counting());
+        System.out.println(collect);
+
+        System.out.println("------------------------------------");
+
+
+        // 平均值
+        Double collect1 = employees.stream()
+                .collect(Collectors.averagingDouble(Employee::getSalary));
+        System.out.println(collect1);
+
+        System.out.println("------------------------------------");
+
+
+        // 获取到工资到总和
+        Double collect2 = employees.stream()
+                .collect(Collectors.summingDouble(Employee::getSalary));
+        System.out.println(collect2);
+
+        System.out.println("-------------------------------------");
+
+
+        // 获取到工资最多到那个对象
+        Optional<Employee> collect3 = employees.stream()
+                .collect(Collectors.maxBy((e1, e2) -> Double.compare(e1.getSalary(), e2.getSalary())));
+        System.out.println(collect3.get());
+
+        // 获取到最小值
+        Optional<Double> collect4 = employees.stream()
+                .map(Employee::getSalary)
+                .collect(Collectors.minBy(Double::compare));
+        System.out.println(collect4.get());
+
+    }
+ @Test
+    public void test6() {
+        // 按照状态进行分组
+        Map<Employee.Status, List<Employee>> collect = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getStatus));
+        System.out.println(collect);
+    }
+
+    //多级分组
+    @Test
+    public void test7() {
+        Map<Employee.Status, Map<String, List<Employee>>> collect = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getStatus, Collectors.groupingBy((e) -> {
+                    if (e.getAge() > 20) {
+                        return "成年人";
+                    } else if (e.getAge() > 30) {
+                        return "中年人";
+                    } else {
+                        return "老年人";
+                    }
+                })));
+        System.out.println(collect);
+    }
+
+    //分片，分区
+    @Test
+    public void test8() {
+        Map<Boolean, List<Employee>> collect = employees.stream()
+                .collect(Collectors.partitioningBy((e) -> e.getSalary() > 8000));
+        System.out.println(collect);
+    }
+
+    @Test
+    public void test9() {
+        // 字符串连接
+        String str = employees.stream()
+                .map(Employee::getName)
+                .collect(Collectors.joining(","));
+        System.out.println(str);
+
+    }
+
+    @Test
+    public void test10() {
+        DoubleSummaryStatistics collect = employees.stream()
+                .collect(Collectors.summarizingDouble(Employee::getSalary));
+        System.out.println(collect.getMax());
+        System.out.println(collect.getMin());
+        System.out.println(collect.getAverage()) ;
+    }
+```
+
+![在这里插入图片描述](https://tva1.sinaimg.cn/large/008i3skNgy1gqo7ct3ntej30vw0hawnd.jpg)
+
+### 5.7 练习
+
+**案例一：**给定一个数字列表，如何返回一个由每个数的平方构成的列表呢？(如：给定【1，2，3，4，5】，返回【1，4，9，16，25】)
+
+```java
+    @Test
+    public void test1() {
+        List<Integer> list = Arrays.asList(1,2,3,4,5);
+
+        List<Integer> collect = list.stream()
+                .map((i) -> i*i)
+                .collect(Collectors.toList());
+        System.out.println(collect);
+    }
+```
+
+**案例二：**怎样使用 map 和 reduce 数一数流中有多少个 Employee 呢？
+
+```java
+List<Employee> employees = Arrays.asList(
+            new Employee(101,"张三",20,8000, Employee.Status.VOCATION),
+            new Employee(102,"李四",21,6500, Employee.Status.BUSY),
+            new Employee(103,"王五",19,9000, Employee.Status.FREE),
+            new Employee(104,"赵六",21,7000, Employee.Status.BUSY),
+            new Employee(105,"田七",30,10000, Employee.Status.FREE)
+    );
+
+    @Test
+    public void test2() {
+        Optional<Integer> reduce = employees.stream()
+                .map((e) -> 1)   //每有一个对象返回一个1
+                .reduce(Integer::sum);  //然后统计下有总和
+        System.out.println(reduce.get());
+    }
+```
+
+**案例三：**题目在代码中
+
+```java
+package com.lhh.streamApi;
+
+import java.util.Objects;
+
+public class Trader {
+
+    private String name;
+
+    private String city;
+
+    public Trader() {
+    }
+
+    public Trader(String name, String city) {
+        this.name = name;
+        this.city = city;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Trader)) return false;
+        Trader trader = (Trader) o;
+        return Objects.equals(name, trader.name) && Objects.equals(city, trader.city);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, city);
+    }
+
+    @Override
+    public String toString() {
+        return "Trader{" +
+                "name='" + name + '\'' +
+                ", city='" + city + '\'' +
+                '}';
+    }
+}
+```
+
+```java
+package com.lhh.streamApi;
+
+import java.util.Objects;
+
+public class Transaction {
+
+    private Trader trader;
+
+    private int year;
+
+    private int value;
+
+    public Transaction() {
+    }
+
+    public Transaction(Trader trader, int year, int value) {
+        this.trader = trader;
+        this.year = year;
+        this.value = value;
+    }
+
+    public Trader getTrader() {
+        return trader;
+    }
+
+    public void setTrader(Trader trader) {
+        this.trader = trader;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Transaction)) return false;
+        Transaction that = (Transaction) o;
+        return year == that.year && value == that.value && Objects.equals(trader, that.trader);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(trader, year, value);
+    }
+
+    @Override
+    public String toString() {
+        return "Transaction{" +
+                "trader=" + trader +
+                ", year=" + year +
+                ", value=" + value +
+                '}';
+    }
+}
+
+```
+
+```java
+package com.lhh.streamApi;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+public class TestTransaction {
+
+    List<Transaction> transactions = null;
+
+    @Before
+    public void before() {
+        Trader raoul = new Trader("Rauol","huaian");
+        Trader mario = new Trader("Mario","nanjing");
+        Trader alan = new Trader("Alan","suzhou");
+        Trader brian = new Trader("Bsrian","huaian");
+
+        transactions = Arrays.asList(
+                new Transaction(brian,2011,300),
+                new Transaction(raoul,2012,1000),
+                new Transaction(raoul,2011,400),
+                new Transaction(mario,2012,710),
+                new Transaction(mario,2012,700),
+                new Transaction(alan,2012,950)
+        );
+    }
+
+    //1.找出2011年发生的所有交易，并按交易额排序（从低到高）
+    @Test
+    public void test1() {
+        transactions.stream()
+                .filter((e)->e.getYear()==2011)
+                .sorted((e1,e2)->Integer.compare(e1.getValue(),e2.getValue()))
+                .forEach(System.out::println);
+    }
+
+    //2.交易员都在哪些城市工作过
+    @Test
+    public void test2() {
+        List<String> collect = transactions.stream()
+                .map((t) -> t.getTrader().getCity())
+                .distinct()
+                .collect(Collectors.toList());
+        System.out.println(collect);
+    }
+
+    //3.查找所有来自淮安的交易员，并按姓名排序
+    @Test
+    public void test3() {
+        transactions.stream()
+                .filter((t)->t.getTrader().getCity().equals("huaian"))
+                .sorted((t1,t2)-> t1.getTrader().getName().compareTo(t2.getTrader().getName()))
+                .distinct()
+                .forEach(System.out::println);
+
+    }
+
+    //4.返回所有交易员的姓名字符串，按字母顺序排序
+    @Test
+    public void test4() {
+        transactions.stream()
+                .map((t)->t.getTrader().getName())
+                .sorted()
+                .distinct()
+                .forEach(System.out::println);
+
+        System.out.println("------------------------------------");
+
+        String reduce = transactions.stream()
+                .map((t) -> t.getTrader().getName())
+                .sorted()
+                .reduce("", String::concat);
+        System.out.println(reduce);
+
+    }
+
+    //5.有没有交易员是在南京工作的
+    @Test
+    public void test5() {
+        boolean nanjing = transactions.stream()
+                .anyMatch((t) -> t.getTrader().getCity().equals("nanjing"));
+        System.out.println(nanjing);
+    }
+
+
+    //6.打印生活在淮安的交易员的所有交易额
+    @Test
+    public void test6() {
+        Optional<Integer> huaian = transactions.stream()
+                .filter((t) -> t.getTrader().getCity().equals("huaian"))
+                .map((t) -> t.getValue())
+                .reduce(Integer::sum);  // 将流中元素反复结合起来得到一个值
+        System.out.println(huaian.get());
+    }
+
+    //7.所有的交易中，最高的交易额是多少
+    @Test
+    public void test7() {
+        Optional<Integer> collect = transactions.stream()
+                .map((t) -> t.getValue())
+                .collect(Collectors.maxBy(Integer::compare));
+        System.out.println(collect.get());
+
+        System.out.println("-------------------------------");
+
+        Optional<Transaction> max = transactions.stream()
+                .max((t1, t2) -> Integer.compare(t1.getValue(), t2.getValue()));
+        System.out.println(max
+        );
+    }
+
+    //8.所有的交易中，最小的交易额是多少
+    @Test
+    public void test8() {
+        Optional<Integer> collect = transactions.stream()
+                .map((t) -> t.getValue())
+                .collect(Collectors.minBy(Integer::compare));
+        System.out.println(collect.get());
+
+
+        Optional<Integer> min = transactions.stream()
+                .map((t) -> t.getValue())
+                .min(Integer::compare);
+        System.out.println(min.get());
+    }
+}
+```
+
+### 5.8 并行流
+
+- 并行流：就是把一个内容分成几个数据块，并用不同的线程分别处理每个数据块的流
+- Java 8 中将并行进行了优化，我们可以很容易的对数据进行操作；Stream API 可以声明性地通过 parallel() 与 sequential() 在并行流与串行流之间切换
+
+Fork / Join 框架：
+
+![在这里插入图片描述](https://tva1.sinaimg.cn/large/008i3skNgy1gqo7iaefmkj30vv0m0wn0.jpg)
+
+Fork / Join 实现：
+
+```java
+package com.lhh.streamApi;
+
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.RecursiveTask;
+
+/**
+ * RecursiveAction 方法没有返回值
+ * RecursiveTask方法有返回值
+ * */
+public class ForkJoinCalculate extends RecursiveTask<Long> {
+
+    private long start;
+
+    private long end;
+
+    private static final long THRESHOLD = 10000;
+
+    public ForkJoinCalculate(long start, long end) {
+        this.start = start;
+        this.end = end;
+    }
+
+    @Override
+    protected Long compute() {
+        long length = end - start;
+
+        if (length <= THRESHOLD) {
+            long sum = 0;
+            for (long i = start; i <= end; i++) {
+                sum += i;
+            }
+            return sum;
+        }
+        else {
+            long middle = (start + end) /2;
+            ForkJoinCalculate left = new ForkJoinCalculate(start, middle);
+            left.fork();   //拆分子任务，同时加入线程队列
+
+            ForkJoinCalculate right = new ForkJoinCalculate(middle + 1, end);
+            right.fork();
+            return left.join() + right.join();
+        }
+
+    }
+}
+
+```
+
+```java
+package com.lhh.streamApi;
+
+import org.junit.Test;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.stream.LongStream;
+
+public class TestForkJoin {
+
+    /**
+     * fork join框架
+     * */
+    @Test
+    public void test1() {
+        Instant start = Instant.now();
+        ForkJoinPool pool = new ForkJoinPool();
+        ForkJoinTask<Long> task = new ForkJoinCalculate(0,100000000l);
+        Long sum = pool.invoke(task);
+        System.out.println(sum);
+        Instant end = Instant.now();
+        System.out.println("耗时："+ Duration.between(start,end).toMillis());
+    }
+
+    @Test
+    public void test2() {
+        Instant start = Instant.now();
+
+        long sum  = 0L;
+
+        for (long i = 0; i <= 100000000l; i++) {
+            sum += i;
+        }
+        System.out.println(sum);
+
+        Instant end = Instant.now();
+        System.out.println("耗时："+ Duration.between(start,end).toMillis());
+    }
+
+
+    /**
+     * java8并行流
+     * */
+    @Test
+    public void test3() {
+        Instant start = Instant.now();
+
+        LongStream.rangeClosed(0,100000000l)
+                .parallel()
+                .reduce(0,Long::sum);
+
+        Instant end = Instant.now();
+        System.out.println("耗时："+ Duration.between(start,end).toMillis());
+    }
+}
+```
+
+## 六、Optional
+
+**定义：**Optional 类 (java.util.Optional) 是一个容器类，代表一个值存在或不存在，原来用 null 表示一个值不存在，现在用 Optional 可以更好的表达这个概念；并且可以避免空指针异常
+
+常用方法：
+
+- Optional.of(T t)：创建一个 Optional 实例
+- Optional.empty(T t)：创建一个空的 Optional 实例
+- Optional.ofNullable(T t)：若 t 不为 null，创建 Optional 实例，否则空实例
+- isPresent()：判断是否包含某值
+- orElse(T t)：如果调用对象包含值，返回该值，否则返回 t
+- orElseGet(Supplier s)：如果调用对象包含值，返回该值，否则返回 s 获取的值
+- map(Function f)：如果有值对其处理，并返回处理后的 Optional，否则返回 
+- Optional.empty()
+- flatmap(Function mapper)：与 map 相似，要求返回值必须是 Optional
+
+
+
+```java
+package com.lhh.optional;
+
+
+import com.lhh.streamApi.Employee;
+import org.junit.Test;
+
+import java.util.Optional;
+
+public class TestOptional {
+
+    /**
+     * optional 容器类的常用方法有：
+     * Optional.of(T t): 创建一个optional实例
+     * Optional.empty(T t): 创建一个空的optional实例
+     * Optional.ofNullable(T t):若t不为null,创建optional实例，否则创建空实例。
+     * isPresent()  判断是否有值
+     * orElse(T t)  如果调用对象包含值，则返回该值，否则返回T
+     * orElseGet(Supplier s) 如果调用对象包含值，则返回该值，否则返回s获取的值
+     * map(Function f)   如果有值对其进行处理，并返回处理后的Optional,否则返回Optional.empty()
+     * flatMap(Function f) 与mapper类似，要求返回值必须是Optional
+     * */
+
+    @Test
+    public void test1() {
+        // 可以快速定位空指针异常的地方  of方式不能传入null值
+        Optional<Employee> employee = Optional.of(new Employee());
+        Employee employee1 = employee.get();
+        System.out.println(employee1);
+
+    }
+
+    @Test
+    public void test2() {
+        Optional<Object> empty = Optional.empty();
+        System.out.println(empty.get());
+    }
+
+    @Test
+    public void test3() {
+        //两种方式均可，只是传入null时，无法获取到值
+//        Optional<Object> empty = Optional.ofNullable(null);
+        Optional<Object> empty = Optional.ofNullable(new Employee());
+        System.out.println(empty.get());
+    }
+
+    @Test
+    public void test4() {
+        Optional<Employee> empty = Optional.ofNullable(new Employee());
+
+//        if (empty.isPresent()) {
+//            System.out.println(empty.get());
+//        }
+        // 避免了空指针异常的问题
+        Employee zhangsan = empty.orElse(new Employee(1, "zhangsan", 2, 10, Employee.Status.BUSY));
+        System.out.println(zhangsan );
+    }
+
+    @Test
+    public void test5() {
+        Optional<Employee> zhangsan = Optional.ofNullable(new Employee(1, "zhangsan", 2, 10, Employee.Status.BUSY));
+
+//        Optional<String> s = zhangsan.map((e) -> e.getName());
+
+        Optional<String> s = zhangsan.flatMap((e) -> Optional.of(e.getName()));
+        System.out.println(s.get());
+    }
+
+
+    //例题：需求：获取一个男人心中女神的名称
+    @Test
+    public void test6() {
+
+    }
+
+    public String getGodnessName(Man man) {
+        if (man != null) {
+            Goddness goddness = man.getGoddness();
+            if (goddness != null) {
+                return goddness.getName();
+            }
+        }
+        return "cy";
+    }
+
+    public String getGodnessName2(Optional<NewMan> newMan) {
+        return newMan.orElse(new NewMan())
+                .getGoddness()
+                .orElse(new Goddness("cy"))
+                .getName();
+    }
+
+    @Test
+    public void test7() {
+        Optional<NewMan> op = Optional.ofNullable(new NewMan());
+
+        String godnessName2 = getGodnessName2(op);
+
+        System.out.println(godnessName2);
+    }
+}
+```
+
+
+
+```java
+package com.lhh.optional;
+
+public class Goddness {
+
+    private String name;
+
+    public Goddness() {
+    }
+
+    public Goddness(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "Goddness{" +
+                "name='" + name + '\'' +
+                '}';
+    }
+}
+
+```
+
+```java
+package com.lhh.optional;
+
+public class Man {
+
+    private Goddness goddness;
+
+    public Man() {
+    }
+
+    public Man(Goddness goddness) {
+        this.goddness = goddness;
+    }
+
+    public Goddness getGoddness() {
+        return goddness;
+    }
+
+    public void setGoddness(Goddness goddness) {
+        this.goddness = goddness;
+    }
+
+    @Override
+    public String toString() {
+        return "Man{" +
+                "goddness=" + goddness +
+                '}';
+    }
+}
+
+```
+
+```java
+package com.lhh.optional;
+
+import java.util.Optional;
+
+public class NewMan {
+
+    private Optional<Goddness> goddness = Optional.empty();
+
+    public NewMan(Optional<Goddness> goddness) {
+        this.goddness = goddness;
+    }
+
+    public NewMan() {
+    }
+
+    public Optional<Goddness> getGoddness() {
+        return goddness;
+    }
+
+    public void setGoddness(Optional<Goddness> goddness) {
+        this.goddness = goddness;
+    }
+
+    @Override
+    public String toString() {
+        return "NewMan{" +
+                "goddness=" + goddness +
+                '}';
+    }
+}
+
+```
+
+## 七、接口
+
+### 7.1 默认方法
+
+```java
+//原本接口中只允许有 全局静态常量和抽象方法
+public interface MyFunc {
+
+    //java8中新增了 拥有了可以实现的默认的方法
+    default String getName() {
+        return "哈哈";
+    }
+
+    // 也可以有静态方法
+    public static void show() {
+        System.out.println("这是一个静态方法");
+    }
+}
+```
+
+类优先原则：
+
+![在这里插入图片描述](https://tva1.sinaimg.cn/large/008i3skNgy1gqo7nceunij30x80g7nao.jpg)
+
+```java
+public class MyClass {
+
+    public String getName() {
+        return "嘿嘿嘿";
+    }
+}
+```
+
+```java
+//原本接口中只允许有 全局静态常量和抽象方法
+public interface MyFunc {
+
+    //java8中新增了 拥有了可以实现的默认的方法
+    default String getName() {
+        return "哈哈";
+    }
+
+    // 也可以有静态方法
+    public static void show() {
+        System.out.println("这是一个静态方法");
+    }
+}
+```
+
+```java
+public interface MyInterface {
+
+    default String getName() {
+        return "嘻嘻";
+    }
+}
+```
+
+```java
+public class SubClass implements MyFunc,MyInterface{
+    @Override
+    public String getName() {
+        return MyInterface.super.getName();
+    }
+}
+```
+
+```java
+/**
+ *
+ * 接口中的默认方法和静态方法
+ * */
+public class TestDefaultStaticMethod {
+
+    public static void main(String[] args) {
+        /**
+         * 类优先
+         * */
+        SubClass sub = new SubClass();
+        System.out.println(sub.getName());
+
+        MyFunc.show();
+    }
+}
+```
+
+### 7.2 静态方法
+
+```java
+//原本接口中只允许有 全局静态常量和抽象方法
+public interface MyFunc {
+
+    //java8中新增了 拥有了可以实现的默认的方法
+    default String getName() {
+        return "哈哈";
+    }
+
+    // 也可以有静态方法
+    public static void show() {
+        System.out.println("这是一个静态方法");
+    }
+}
+```
+
+## 八. DateTime API
+
+### 8.1 解决传统线程安全问题
+
+```java
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class DateFormatThreadLocal {
+
+    private static final ThreadLocal<DateFormat> df = new ThreadLocal<DateFormat>(){
+        protected DateFormat initialValue() {
+            return new SimpleDateFormat("yyyyMMdd");
+        }
+    };
+
+    public static Date convert(String source) throws ParseException {
+        return df.get().parse(source);
+    }
+}
+```
+
+```java
+package com.lhh.newtime;
+
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
+public class TestSimpleDateFormat extends Exception{
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+//
+//        Callable<Date> task = new Callable<Date>() {
+//            @Override
+//            public Date call() throws Exception {
+//                //线程安全方式
+//                return DateFormatThreadLocal.convert("20160812");
+//                //线程不安全方式
+////                return sdf.parse("20160812");
+//            }
+//        };
+//
+//        ExecutorService pool = Executors.newFixedThreadPool(10);
+//
+//        List<Future<Date>> futures = new ArrayList<>();
+//
+//        for (int i = 0; i < 10; i++) {
+//            futures.add(pool.submit(task));
+//        }
+//
+//
+//        for (Future<Date> future : futures) {
+//
+//            System.out.println(future.get());
+//        }
+//
+//        pool.shutdown();
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+        Callable<LocalDate> task = new Callable<LocalDate>() {
+            @Override
+            public LocalDate call() throws Exception {
+                //线程安全方式
+                return LocalDate.parse("20160812", dtf);
+                //线程不安全方式
+//                return sdf.parse("20160812");
+            }
+        };
+
+        ExecutorService pool = Executors.newFixedThreadPool(10);
+
+        List<Future<LocalDate>> futures = new ArrayList<>();
+
+        for (int i = 0; i < 10; i++) {
+            futures.add(pool.submit(task));
+        }
+
+
+        for (Future<LocalDate > future : futures) {
+
+            System.out.println(future.get());
+        }
+
+        pool.shutdown();
+    }
+}
+```
+
+### 8.2 本地时间、日期
+
+​	![img](https://tva1.sinaimg.cn/large/008i3skNgy1gqozjmeopzj30uq0kbthx.jpg)
+
+常用方法：
+
+| **方法名**                                                   | **返回值类型**       | **解释**                                                     |
+| :----------------------------------------------------------- | -------------------- | ------------------------------------------------------------ |
+| now( )                                                       | static LocalDateTime | 从默认时区的系统时钟获取当前日期                             |
+| of(int year, int month, int dayOfMonth, int hour, int minute, int second) | static LocalDateTime | 从年，月，日，小时，分钟和秒获得 LocalDateTime的实例，将纳秒设置为零 |
+| plus(long amountToAdd, TemporalUnit unit)                    | LocalDateTime        | 返回此日期时间的副本，并添加指定的数量                       |
+| get(TemporalField field)                                     | int                  | 从此日期时间获取指定字段的值为 int                           |
+
+```java
+    // 1.LocalDate  LocalTime  LocalDateTime
+    @Test
+    public void test1() {
+        // 获取当前时间
+        LocalDateTime ldt = LocalDateTime.now();
+        System.out.println(ldt);  //2021-05-18T19:46:00.996
+
+        LocalDateTime of = LocalDateTime.of(2021, 12, 4, 5, 20);
+        System.out.println(of);
+
+
+        //当前年份加上两年
+        LocalDateTime localDateTime = ldt.plusYears(2);
+        System.out.println(localDateTime);   //2023-05-18T19:46:00.996
+
+        //当前月份减去两个月
+        LocalDateTime localDateTime1 = ldt.minusMonths(2);
+        System.out.println(localDateTime1);  //2021-03-18T19:47:13.529
+
+
+        System.out.println("--------------------------");
+
+        System.out.println(ldt.getYear());  //2021
+        System.out.println(ldt.getMonthValue());  //5
+        System.out.println(ldt.getDayOfMonth());   //18
+        System.out.println(ldt.getHour());    //19
+        System.out.println(ldt.getMinute());  //48
+        System.out.println(ldt.getSecond());  //46
+    }
+```
+
+### 8.3 时间戳
+
+Instant：以 Unix 元年 1970-01-01 00:00:00 到某个时间之间的毫秒值
+
+```java
+    //2.Instant  时间戳（以1970年0点0时0分0秒到某个时间到毫秒值）  计算机所能识别的时间间隔
+    @Test
+        public void test2() {
+            Instant ins1 = Instant.now();   //默认获取以utc时区为基础的
+            System.out.println(ins1);
+
+            // 带有偏移时间差的信息
+            OffsetDateTime offsetDateTime = ins1.atOffset(ZoneOffset.ofHours(8));
+            // 相比较utc加上8个小时
+            System.out.println(offsetDateTime);  //2021-05-18T19:52:31.836+08:00
+
+
+            //转换为毫秒值  ->时间戳
+            System.out.println(ins1.toEpochMilli());   //1621338924590
+
+
+            //依据时间戳显示时间
+            Instant instant = Instant.ofEpochMilli(1);
+            System.out.println(instant);   //1970-01-01T00:00:00.001Z
+    }
+```
+
+### 8.4 日期、时间差
+
+- Duration：计算两个时间之间的间隔
+- Period：计算两个日期之间的间隔
+
+```java
+    //3.Duation  计算两个时间之间的间隔
+    //Period：计算两个"日期之间的间隔"
+    @Test
+    public void test3() {
+
+        // Duation计算两个时间之间的间隔
+        Instant ins1 = Instant.now();
+
+        try{
+            Thread.sleep(1000);
+        }catch (InterruptedException e) {
+
+        }
+        Instant ins2 = Instant.now();
+
+        Duration between = Duration.between(ins1, ins2);
+        System.out.println(between.toMillis());  //计算两个时间之间的间隔  毫秒 1004
+
+        System.out.println("--------------------------------------");
+
+        LocalDateTime ldt1 = LocalDateTime.now();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+
+        }
+        LocalDateTime ldt2 = LocalDateTime.now();
+        System.out.println(Duration.between(ldt1, ldt2).toMillis());  //1001
+    }
+
+    @Test
+    public void test4() {
+        // period计算两个日期之间的间隔
+        LocalDate ld1 = LocalDate.of(2021,4,10);
+        LocalDate ld2 = LocalDate.now();
+
+        Period between = Period.between(ld1, ld2);
+        System.out.println(between);
+
+        System.out.println(between.getYears());  //0
+        System.out.println(between.getMonths());  //1
+        System.out.println(between.getDays());   //8
+    }
+```
+
+### 8.5 时间矫正器
+
+![img](https://tva1.sinaimg.cn/large/008i3skNgy1gqozrjuwgdj30v80jljze.jpg)
+
+```java
+    //4.TemporaAdjuster; 时间矫正器
+    @Test
+    public void test5() {
+        LocalDateTime ldt = LocalDateTime.now();
+        System.out.println(ldt);   //2021-05-19T22:53:08.870
+
+        LocalDateTime localDateTime = ldt.withDayOfMonth(10);
+        System.out.println(localDateTime);   //2021-05-10T22:53:08.870
+
+        //计算下一个周日
+        LocalDateTime with = ldt.with(TemporalAdjusters.next(DayOfWeek.SUNDAY));
+        System.out.println(with);   //2021-05-23T22:58:13.293
+
+
+        //自定义下一个工作日
+        LocalDateTime ldt5 = ldt.with((l) -> {
+            LocalDateTime ldt4 = (LocalDateTime) l;
+
+            DayOfWeek dayOfWeek = ldt4.getDayOfWeek();
+
+            if (dayOfWeek.equals(DayOfWeek.FRIDAY)) {
+                return ldt4.plusDays(3);
+            } else if (dayOfWeek.equals(DayOfWeek.SATURDAY)) {
+                return ldt4.plusDays(2);
+            } else {
+                return ldt4.plusDays(1);
+            }
+        });
+        System.out.println(ldt5);   //2021-05-20T23:03:01.847
+    }
+```
+
+### 8.5 时间格式化
+
+```java
+    //5.时间格式化和时区的处理
+    @Test
+    public void test6() {
+        //DateTimeFormatter  格式化时间和日期
+        DateTimeFormatter dtf = DateTimeFormatter.ISO_DATE_TIME;
+
+        LocalDateTime ldt = LocalDateTime.now();
+
+        String format = dtf.format(ldt);
+
+        System.out.println(format);  //2021-05-19T23:06:59.431
+
+        System.out.println("----------------------------------");
+
+
+        // 时间->str
+        DateTimeFormatter dtf2 = DateTimeFormatter.ofPattern("yyyy年MM月dd日");
+
+        String format1 = dtf2.format(ldt);
+
+        System.out.println(format1);  //2021年05月19日'
+
+        //str->时间  解析字符串的时间格式
+        LocalDate parse = LocalDate.parse(format1, dtf2);
+        System.out.println(parse);   //2021-05-19
+    }
+```
+
+### 8.6 时区处理
+
+```java
+    //6.时区的api操作
+    @Test
+    public void test7() {
+        //列出所有的时区
+        Set<String> availableZoneIds = ZoneId.getAvailableZoneIds();
+//        availableZoneIds.forEach(System.out::println);
+
+
+        //指定时区显示时间
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("America/Marigot"));
+
+        System.out.println(now);   //2021-05-19T11:30:55.838
+
+        LocalDateTime now1 = LocalDateTime.now();
+
+        // 带有时区的时间和日期
+        ZonedDateTime dateTime = now1.atZone(ZoneId.of("America/Marigot"));
+
+        System.out.println(dateTime);   //2021-05-19T23:32:31.169-04:00[America/Marigot]
+    }
+```
+
+## 九、注释
+
+### 9.1 重复注释
+
+定义注解：
+
+```java
+@Repeatable(MyAnnotions.class)
+@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE})
+@Retention(RetentionPolicy.SOURCE)
+public @interface MyAnnocation {
+
+    String value() default "lhh";
+}
+```
+
+定义容器：
+
+```java
+@Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE})
+@Retention(RetentionPolicy.SOURCE)
+public @interface MyAnnotions {
+
+    MyAnnocation[] value();
+}
+```
+
+测试：
+
+```java
+/**
+ * 重复注解
+ * */
+public class TestAnnoation {
+
+    @MyAnnocation("hello")
+    @MyAnnocation("world")
+    public void show(@MyAnnocation("abc") String str) {
+
+    }
+    
+    @Test
+    public void test1() throws Exception {
+        Class<TestAnnoation> classz = TestAnnoation.class;
+
+        Method show = classz.getMethod("show");
+        MyAnnocation[] annotationsByType = show.getAnnotationsByType(MyAnnocation.class);
+        for (MyAnnocation myannotion:annotationsByType) {
+            System.out.println(myannotion.value());
+        }
+    }
+}
+```
+
+### 9.2 类型注解
+
+Java 8 新增注解：新增ElementType.TYPE_USE 和ElementType.TYPE_PARAMETER（在Target上）
