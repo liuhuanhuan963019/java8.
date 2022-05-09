@@ -90,6 +90,12 @@ public class TestTransaction {
     //6.打印生活在淮安的交易员的所有交易额
     @Test
     public void test6() {
+        Integer huaian1 = transactions.stream()
+                .filter((f) -> f.getTrader().getCity().equals("huaian"))
+                .collect(Collectors.summingInt(Transaction::getValue));
+        System.out.println(huaian1);
+
+
         Optional<Integer> huaian = transactions.stream()
                 .filter((t) -> t.getTrader().getCity().equals("huaian"))
                 .map((t) -> t.getValue())
@@ -100,6 +106,16 @@ public class TestTransaction {
     //7.所有的交易中，最高的交易额是多少
     @Test
     public void test7() {
+        Optional<Transaction> collect1 = transactions.stream()
+                .collect(Collectors.maxBy((e1, e2) -> Integer.compare(e1.getValue(), e2.getValue())));
+        System.out.println(collect1.get().getValue());
+
+        Optional<Integer> collect2 = transactions.stream()
+                .map(Transaction::getValue)
+                .collect(Collectors.maxBy(Integer::compare));
+        System.out.println(collect2.get());
+
+
         Optional<Integer> collect = transactions.stream()
                 .map((t) -> t.getValue())
                 .collect(Collectors.maxBy(Integer::compare));
@@ -109,8 +125,7 @@ public class TestTransaction {
 
         Optional<Transaction> max = transactions.stream()
                 .max((t1, t2) -> Integer.compare(t1.getValue(), t2.getValue()));
-        System.out.println(max
-        );
+        System.out.println(max);
     }
 
     //8.所有的交易中，最小的交易额是多少

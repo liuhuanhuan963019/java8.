@@ -60,6 +60,55 @@ public class TestStreamAPi3 {
     }
 
     @Test
+    public void Yes() {
+
+        Double collect1 = employees.stream()
+                .collect(Collectors.averagingDouble(Employee::getSalary));
+        System.out.println(collect1);
+
+        Double collect = employees.stream()
+                .collect(Collectors.summingDouble(Employee::getSalary));
+        System.out.println(collect);
+
+        Optional<Employee> collect2 = employees.stream()
+                .collect(Collectors.maxBy((e1, e2) -> Double.compare(e1.getSalary(), e2.getSalary())));
+        System.out.println(collect2.get());
+
+
+        Optional<Double> collect3 = employees.stream()
+                .map(Employee::getSalary)
+                .collect(Collectors.minBy(Double::compare));
+        System.out.println(collect3.get());
+
+        Map<Employee.Status, List<Employee>> collect4 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getStatus));
+        System.out.println(collect4);
+
+        Map<Employee.Status, Map<String, List<Employee>>> collect5 = employees.stream()
+                .collect(Collectors.groupingBy(Employee::getStatus, Collectors.groupingBy((employee -> {
+                    if (employee.getAge() > 20) {
+                        return "老年人";
+                    } else if (employee.getAge() < 20) {
+                        return "正常人";
+                    } else {
+                        return "反人类";
+                    }
+                }))));
+        System.out.println(collect5);
+
+        // 分区
+        Map<Boolean, List<Employee>> collect6 = employees.stream()
+                .collect(Collectors.partitioningBy((e) -> e.getSalary() > 8000));
+        System.out.println(collect6);
+
+    }
+
+    @Test
+    public void zuoye() {
+
+    }
+
+    @Test
     public void test2() {
         long count = employees.stream()
                 .count();
